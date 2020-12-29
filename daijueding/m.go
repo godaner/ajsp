@@ -9,18 +9,21 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"sync"
 	"time"
 )
 
+var fetcherWat sync.WaitGroup
+
 func M() {
-	newHC := func() *http.Client {
+	newHC := func(t int64) *http.Client {
 		return &http.Client{
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 			},
 			// CheckRedirect: op[0].CheckRedirect,
 			// Jar:           op[0].Jar,
-			Timeout: time.Duration(60) * time.Second,
+			Timeout: time.Duration(t) * time.Second,
 		}
 	}
 	// read count
@@ -29,23 +32,28 @@ func M() {
 	rsc := make(chan interface{}, flag.N)
 	// fetch
 	go func() {
-		hc := newHC()
+		hc := newHC(60)
 		// loop fetch
 		for ; ; {
 			rs := fetch(hc)
-			for _, r := range rs {
-				rsc <- r
-			}
 			if len(rs) == 0 {
 				<-time.After(time.Duration(flag.WT) * time.Second) // 等待n s
+				continue
 			}
+			fetcherWat.Add(len(rs))
+			go func() {
+				for _, r := range rs {
+					rsc <- r
+				}
+			}()
+			fetcherWat.Wait()
 		}
 	}()
 	// do
 	for i := 0; i < int(flag.W); i++ {
 		// many worker
 		go func() {
-			hc := newHC()
+			hc := newHC(30)
 			// loop do
 			for ; ; {
 				do(hc, <-rsc)
@@ -85,8 +93,8 @@ func fetch(hc *http.Client) (rs []interface{}) {
 	if err != nil {
 		panic(err)
 	}
-	log.Printf("djd get record success , len(result) is : %+v!", len(result))
 	rs = result["data"].(map[string]interface{})["records"].([]interface{})
+	log.Printf("djd get record success , len(result) is : %+v!", len(rs))
 
 	return rs
 }
@@ -98,8 +106,11 @@ func do(hc *http.Client, r interface{}) {
 			log.Println("djd do : PANIC PANIC PANIC PANIC PANIC PANIC PANIC PANIC PANIC PANIC PANIC , err is ", err)
 		}
 	}()
+	defer func() {
+		fetcherWat.Done()
+	}()
 	rm := r.(map[string]interface{})
-	log.Printf("djd do record start , record is : %+v!", rm)
+	// log.Printf("djd do record start , record is : %+v!", rm)
 	shardKey := rm["shardKey"].(string)
 	affairId := rm["busiId"].(string)
 	req, err := http.NewRequest("POST", flag.HttpAddr+"/api/approval/dth/affair/submitAffair", bytes.NewBufferString(`{"affairId":"`+affairId+`","shardKey":"`+shardKey+`","handleType":7,"auditAdvice":"1","auditAdviceInfo":"同意","base64Json":"","attIds":""}`))
