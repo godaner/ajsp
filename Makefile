@@ -1,4 +1,8 @@
-build:buildsp builddfz builddjd builddsc builddsl builddzz clear
+build:buildpj buildsp builddfz builddjd builddsc builddsl builddzz clear
+buildpj:
+	-rm pj.exe
+	CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -o pj.exe ./pj/cmd/boot.go
+	-upx -9 pj.exe
 buildsp:
 	-rm sp.exe
 	CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -o sp.exe ./sp/cmd/boot.go
