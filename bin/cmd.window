@@ -2,9 +2,10 @@ set auth=eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJTTlNBSlFfWFpTUEpfTElVSFVJWUlORyIsInVzZX
 set route=60ddb8258d91373c858b187966456381
 set w=10
 set n=10
-dsl.exe -w %w% -n %n% -route %route% -auth %auth%
-dsc.exe -w %w% -n %n% -route %route% -auth %auth%
-djd.exe -w %w% -n %n% -route %route% -auth %auth%
-dzz.exe -w %w% -n %n% -route %route% -auth %auth%
-dfz.exe -w %w% -n %n% -route %route% -auth %auth%
-pj.exe -d 20201230 -s 1 -e 10000
+./dsl.exe -w %w% -n %n% -route %route% -auth %auth%
+./dsc.exe -w %w% -n %n% -route %route% -auth %auth%
+./djd.exe -w %w% -n %n% -route %route% -auth %auth%
+./dzz.exe -w %w% -n %n% -route %route% -auth %auth%
+./dfz.exe -w %w% -n %n% -route %route% -auth %auth%
+./pj.exe -d 20201230 -s 1 -e 10000
+./qrpj.exe -type emp -code 809f8a537caf460981234975658ce420
